@@ -1,65 +1,51 @@
-# /docs/setup_appliance.md
-# คู่มือการติดตั้ง (Appliance Mode)
+# Demo ระบบ Log Management (Full-Stack Intern Assignment)
 
-คู่มือนี้อธิบายการติดตั้ง Demo Log Management บนเครื่องเดียว (VM/Bare-metal) โดยใช้ Docker Compose
+โปรเจกต์นี้คือระบบ Log Management ที่พัฒนาขึ้นสำหรับข้อสอบภาคปฏิบัติ Full-Stack Developer (Intern)
 
-## 1. ข้อกำหนดขั้นต่ำ (Prerequisites)
-* [cite_start]OS: Ubuntu 22.04+ (หรือ OS อื่นที่รัน Docker ได้) [cite: 104]
-* [cite_start]Hardware: 4 vCPU, 8 GB RAM, 40 GB Disk [cite: 104]
-* Software:
-    * `git`
-    * `docker`
-    * `docker-compose`
+## 1. สถาปัตยกรรม (Architecture)
 
-## 2. ขั้นตอนการติดตั้ง (Installation)
+ระบบนี้ใช้สถาปัตยกรรมที่ประกอบด้วย 3 ส่วนหลัก:
+1.  **Ingestor (FastAPI - Python):** รับ Log (Syslog, HTTP JSON) และทำการ Normalize
+2.  **Storage (PostgreSQL):** จัดเก็บ Log ที่ผ่านการ Normalization แล้ว
+3.  **UI/Dashboard (Grafana):** แสดงผล Dashboard, Query และจัดการ Alert
 
-1.  **Clone Repository:**
-    ```bash
-    git clone [Your Git Repository URL]
-    cd log-management-intern
-    ```
+(ดูแผนภาพและคำอธิบาย data flow ฉบับเต็มได้ที่: `/docs/architecture.md`)
 
-2.  **สร้างไฟล์ Environment:**
-    คัดลอกไฟล์ `.env.example` มาเป็น `.env` (สามารถแก้ไขค่า admin password ได้ที่นี่)
+## 2. Tech Stack
+
+-   **Backend (Ingestor):** Python (FastAPI)
+-   **Database:** PostgreSQL
+-   **UI/Dashboard:** Grafana
+-   **Deployment:** Docker Compose
+
+## 3. วิธีการรัน (Appliance Mode)
+
+**Prerequisites:**
+-   Docker
+-   Docker Compose (v2)
+
+**ขั้นตอน:**
+1.  Clone repository นี้
+2.  สร้างไฟล์ `.env` จาก `.env.example`:
     ```bash
     cp .env.example .env
     ```
-
-3.  **รันระบบ (One Command):**
+3.  รันระบบ:
     ```bash
-    docker-compose up -d
+    docker compose up -d
     ```
 
-## 3. การตรวจสอบระบบ (Verification)
+**การเข้าใช้งาน:**
+-   **UI (Grafana):** `http://localhost:3000` (User: `admin`, Pass: `admin`)
+-   **API (Ingestor):** `http://localhost:8080` (Health Check)
 
-1.  **ตรวจสอบสถานะ Container:**
-    ```bash
-    docker ps
-    ```
-    คุณควรเห็น 3 services รันอยู่: `logmgmt_db` (postgres), `logmgmt_ingestor` (fastapi), `logmgmt_ui` (grafana)
+## 4. วิธีการทดสอบ (Testing)
 
-2.  **เข้าใช้งาน UI (Grafana):**
-    * เปิด Web Browser ไปที่ `http://<Your-Server-IP>:3000`
-    * Login ด้วย:
-        * **User:** `admin` (หรือค่าใน `.env`)
-        * **Pass:** `admin` (หรือค่าใน `.env`)
+ดูรายละเอียดการทดสอบ (ยิง Log) ได้ที่: `/samples/`
 
-3.  **ตรวจสอบ Endpoint (Ingestor):**
-    * เปิด `http://<Your-Server-IP>:8080/`
-    * คุณควรเห็น: `{"status":"ok","message":"Ingestor service is running"}`
-
-## [cite_start]4. การตั้งค่า Security (RBAC/Viewer) [cite: 126]
-
-[cite_start]ระบบนี้ใช้ Grafana ในการจัดการผู้ใช้ (Viewer/Admin) [cite: 23]
-
-1.  Login ด้วย `admin`
-2.  ไปที่เมนู 'Server Admin' (รูปโล่) > 'Users'
-3.  คลิก 'New user'
-4.  สร้างผู้ใช้ใหม่ เช่น:
-    * Name: `Demo Viewer`
-    * Login: `viewer`
-    * Password: `viewer`
-5.  ไปที่เมนู 'Dashboards' (รูปสี่เหลี่ยม 4 ช่อง)
-6.  ค้นหาโฟลเดอร์ 'Log Management' คลิก 'Permissions'
-7.  เพิ่ม `viewer` และให้สิทธิ์ 'View'
-8.  Logout และลอง Login ด้วย `viewer` จะพบว่าสามารถดู Dashboard ได้อย่างเดียว แต่แก้ไขไม่ได้
+**A. ทดสอบ HTTP (JSON):**
+(ต้องมี Python และ `requests` ติดตั้งในเครื่อง)
+```bash
+# (Windows)
+python samples/post_logs.py demoA samples/crowdstrike.json samples/windows_ad.json
+python samples/post_logs.py demoB samples/aws_cloudtrail.json samples/m365_audit.json
