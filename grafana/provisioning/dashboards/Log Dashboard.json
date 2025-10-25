@@ -1,0 +1,103 @@
+{
+  "__inputs": [],
+  "__requires": [],
+  "annotations": { "list": [] },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": 1,
+  "links": [],
+  "panels": [
+    {
+      "id": 1,
+      "title": "Log Timeline",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "postgres", "uid": "PostgreSQL Logs" },
+          "format": "time_series",
+          "rawSql": "SELECT \n  \"@timestamp\" AS time,\n  source AS metric,\n  COUNT(*) AS value\nFROM logs\nWHERE\n  $__timeFilter(\"@timestamp\") AND\n  tenant = ANY(string_to_array(replace('${tenant:csv}', '''', ''), ','))\nGROUP BY 1, 2\nORDER BY 1",
+          "timeColumn": "time",
+          "metricColumn": "metric"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Top Sources",
+      "type": "piechart",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 8 },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "postgres", "uid": "PostgreSQL Logs" },
+          "format": "table",
+          "rawSql": "SELECT \n  source AS metric,\n  COUNT(*) AS value\nFROM logs\nWHERE\n  $__timeFilter(\"@timestamp\") AND\n  tenant = ANY(string_to_array(replace('${tenant:csv}', '''', ''), ','))\nGROUP BY 1\nORDER BY 2 DESC\nLIMIT 10",
+          "metricColumn": "metric"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Top Users",
+      "type": "piechart",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 8 },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "postgres", "uid": "PostgreSQL Logs" },
+          "format": "table",
+          "rawSql": "SELECT \n  \"user\" AS metric,\n  COUNT(*) AS value\nFROM logs\nWHERE\n  $__timeFilter(\"@timestamp\") AND\n  tenant = ANY(string_to_array(replace('${tenant:csv}', '''', ''), ','))\nGROUP BY 1\nORDER BY 2 DESC\nLIMIT 10",
+          "metricColumn": "metric"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Log Table (Latest 100)",
+      "type": "logs",
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 16 },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "postgres", "uid": "PostgreSQL Logs" },
+          "format": "table",
+          "rawSql": "SELECT\n  \"@timestamp\" AS time,\n  source,\n  \"user\",\n  event_type,\n  src_ip,\n  dst_ip,\n  data->>'raw' as \"raw_log\"\nFROM logs\nWHERE\n  $__timeFilter(\"@timestamp\") AND\n  tenant = ANY(string_to_array(replace('${tenant:csv}', '''', ''), ','))\nORDER BY \"@timestamp\" DESC\nLIMIT 100"
+        }
+      ]
+    }
+  ],
+  "refresh": "5s",
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": [],
+  "templating": {
+    "list": [
+      {
+        "current": { "selected": false, "text": "All", "value": "$__all" },
+        "datasource": { "type": "postgres", "uid": "PostgreSQL Logs" },
+        "definition": "SELECT DISTINCT tenant FROM logs ORDER BY tenant",
+        "hide": 0,
+        "includeAll": true,
+        "multi": true,
+        "name": "tenant",
+        "options": [],
+        "query": "SELECT DISTINCT tenant FROM logs ORDER BY tenant",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "query"
+      }
+    ]
+  },
+  "time": { "from": "now-1h", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Log Management Dashboard",
+  "uid": "log-mgmt-dashboard",
+  "version": 1,
+  "weekStart": ""
+}

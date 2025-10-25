@@ -1,0 +1,13 @@
+# grafana/provisioning/dashboards/dashboard-provider.yml
+apiVersion: 1
+
+providers:
+  - name: 'Default Dashboards'
+    orgId: 1
+    folder: 'Log Management' # ชื่อโฟลเดอร์ใน UI
+    type: file
+    disableDeletion: false
+    editable: true
+    options:
+      # ⭐️ สำคัญ: path นี้คือ "ภายใน" container
+      path: /etc/grafana/provisioning/dashboards

@@ -1,0 +1,15 @@
+# backend/requirements.txt
+
+# 1. Web Framework
+fastapi
+uvicorn[standard]
+
+# 2. Database Driver (Async)
+sqlalchemy
+asyncpg
+
+# 3. Syslog Server
+syslog-rfc5424-parser
+
+# 4. Utilities (สำหรับ .env)
+pydantic-settings

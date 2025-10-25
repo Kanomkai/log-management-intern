@@ -1,0 +1,66 @@
+# docker-compose.yml
+version: '3.8'
+
+services:
+  # 1. Storage: ฐานข้อมูล PostgreSQL
+  postgres:
+    image: postgres:16-alpine
+    container_name: logmgmt_db
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+      POSTGRES_DB: ${POSTGRES_DB:-logdb}
+    ports:
+      - "5432:5432" 
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+      # ⭐️ สำคัญ: เมาท์สคริปต์ SQL ของเราเข้าไป
+      - ./backend/init:/docker-entrypoint-initdb.d 
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # 2. Ingestor & Normalizer (FastAPI)
+  ingestor:
+    container_name: logmgmt_ingestor
+    restart: always
+    # ⭐️ สำคัญ: สั่งให้ Docker build จากโฟลเดอร์ backend/
+    build: 
+      context: ./backend
+    ports:
+      # พอร์ตสำหรับ Syslog UDP [cite: 12]
+      - "514:514/udp" 
+      # พอร์ตสำหรับ HTTP Ingest (JSON) [cite: 13]
+      - "8080:8080" 
+    environment:
+      # ส่งตัวแปรจาก .env เข้าไปใน container
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-user}:${POSTGRES_PASSWORD:-password}@postgres:5432/${POSTGRES_DB:-logdb}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # 3. UI, Dashboard & Alerting
+  grafana:
+    image: grafana/grafana-oss:10.2.0
+    container_name: logmgmt_ui
+    restart: always
+    ports:
+      # พอร์ตสำหรับ Web UI
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      # ⭐️ สำคัญ: เมาท์ config ของ Grafana เข้าไป
+      - ./grafana/provisioning:/etc/grafana/provisioning
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASS:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    depends_on:
+      - postgres
+
+volumes:
+  pg_data:
+  grafana_data:

@@ -1,0 +1,24 @@
+# grafana/provisioning/datasources/datasource.yml
+apiVersion: 1
+
+datasources:
+  - name: PostgreSQL Logs # ชื่อของ Data Source ใน Grafana
+    type: postgres
+    access: proxy 
+    url: postgres:5432 
+
+    # ⭐️⭐️ นี่คือส่วนที่เราแก้ ⭐️⭐️
+    # เราพิมพ์ "user" และ "logdb" ลงไปตรงๆ
+    user: user
+    database: logdb
+
+    jsonData:
+      sslmode: 'disable'
+      timescaledb: false
+
+    # ⭐️⭐️ นี่คือส่วนที่แก้ ⭐️⭐️
+    # เราพิมพ์ "password" ลงไปตรงๆ
+    secureJsonData:
+      password: password
+
+    editable: true # แก้เป็น true เผื่อต้อง Test ด้วยมือ
